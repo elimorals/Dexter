@@ -54,12 +54,35 @@ const MODEL_PROVIDERS: Record<string, ModelFactory> = {
     }),
 };
 
-const DEFAULT_PROVIDER: ModelFactory = (name, opts) =>
-  new ChatOpenAI({
+const DEFAULT_PROVIDER: ModelFactory = (name, opts) => {
+  const baseUrl = process.env.OPENAI_BASE_URL;
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  const config: {
+    model: string;
+    temperature: number;
+    streaming: boolean;
+    apiKey?: string;
+    configuration?: { baseURL?: string };
+  } = {
     model: name,
     ...opts,
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  };
+  
+  // If base_url is set, use local API
+  if (baseUrl) {
+    config.configuration = { baseURL: baseUrl };
+    // API key may be optional for local APIs
+    if (apiKey) {
+      config.apiKey = apiKey;
+    }
+  } else if (apiKey) {
+    // Otherwise use standard OpenAI API
+    config.apiKey = apiKey;
+  }
+  
+  return new ChatOpenAI(config);
+};
 
 export function getChatModel(
   modelName: string = DEFAULT_MODEL,

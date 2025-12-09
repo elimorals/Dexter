@@ -63,6 +63,8 @@ class ContextManager:
         
         Generate a brief one-sentence summary describing what data this tool output contains.
         Focus on the key information (e.g., "Apple's last 4 quarterly income statements from Q1 2023 to Q4 2023").
+        
+        IMPORTANT: You MUST respond in SPANISH. Write the summary in Spanish.
         """
         
         try:

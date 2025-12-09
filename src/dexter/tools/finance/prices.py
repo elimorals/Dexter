@@ -28,15 +28,19 @@ class PricesInput(BaseModel):
 @tool(args_schema=PricesInput)
 def get_prices(
     ticker: str,
-    interval: Literal["minute", "day", "week", "month", "year"],
-    interval_multiplier: int,
-    start_date: str,
-    end_date: str,
+    interval: Literal["minute", "day", "week", "month", "year"] = "day",
+    interval_multiplier: int = 1,
+    start_date: str = "",
+    end_date: str = "",
 ) -> dict:
     """
     Retrieves historical price data for a stock over a specified date range,
     including open, high, low, close prices, and volume.
     """
+    # Validate required parameters
+    if not start_date or not end_date:
+        raise ValueError("start_date and end_date are required parameters")
+    
     params = {
         "ticker": ticker,
         "interval": interval,

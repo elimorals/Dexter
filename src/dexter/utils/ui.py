@@ -191,6 +191,7 @@ class UI:
         """
         Stream answer text chunks and display them in a beautiful box.
         Returns the complete accumulated text.
+        Filters out <think> blocks and other unwanted markup.
         """
         width = 80
         
@@ -210,13 +211,25 @@ class UI:
         
         accumulated_text = ""
         current_line = ""
+        in_think_block = False
+        
+        def filter_think_blocks(text: str) -> str:
+            """Remove <think> blocks from text."""
+            import re
+            # Remove <think>...</think> blocks (case insensitive, multiline)
+            text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL | re.IGNORECASE)
+            # Also remove standalone <think> tags
+            text = re.sub(r'</?think>', '', text, flags=re.IGNORECASE)
+            return text
         
         try:
             for chunk in text_chunks:
-                accumulated_text += chunk
+                # Filter out think blocks
+                filtered_chunk = filter_think_blocks(chunk)
+                accumulated_text += filtered_chunk
                 
                 # Process chunk character by character
-                for char in chunk:
+                for char in filtered_chunk:
                     if char == '\n':
                         # Print current line with proper padding and border
                         padding_needed = max(0, width - 4 - len(current_line))

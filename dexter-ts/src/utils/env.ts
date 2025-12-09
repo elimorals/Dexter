@@ -132,6 +132,16 @@ export async function ensureApiKeyForModel(modelId: string): Promise<boolean> {
     return false;
   }
 
+  // For OpenAI models, check if using local API
+  if (apiKeyName === 'OPENAI_API_KEY') {
+    const baseUrl = process.env.OPENAI_BASE_URL;
+    if (baseUrl) {
+      // Local API - API key is optional
+      console.log(`Using local API at ${baseUrl}`);
+      return true;
+    }
+  }
+
   // Check if API key already exists
   if (checkApiKeyExists(apiKeyName)) {
     return true;

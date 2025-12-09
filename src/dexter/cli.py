@@ -1,7 +1,16 @@
 from dotenv import load_dotenv
+import os
 
 # Load environment variables
 load_dotenv()
+
+# Disable LangSmith tracing if API key is not properly configured
+# This prevents 403 errors when LangSmith tries to send traces
+langsmith_tracing = os.getenv("LANGSMITH_TRACING", "").lower()
+langsmith_api_key = os.getenv("LANGSMITH_API_KEY", "")
+if langsmith_tracing in ("true", "1") and (not langsmith_api_key or langsmith_api_key.startswith("your-")):
+    # Disable tracing if enabled but API key is missing or placeholder
+    os.environ["LANGSMITH_TRACING"] = "false"
 
 from dexter.agent import Agent
 from dexter.utils.intro import print_intro

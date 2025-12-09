@@ -148,6 +148,8 @@ def ensure_api_key_for_model(model_id: str) -> bool:
     Ensure that the required API key exists for a given model.
     If it doesn't exist, prompt the user to enter it and save it to .env.
     
+    For local APIs (when OPENAI_BASE_URL is set), API key is optional.
+    
     Args:
         model_id: The model ID to check
         
@@ -158,6 +160,14 @@ def ensure_api_key_for_model(model_id: str) -> bool:
     if not api_key_name:
         print(f"Warning: Unknown model '{model_id}', cannot verify API key.")
         return False
+    
+    # For OpenAI models, check if using local API
+    if api_key_name == "OPENAI_API_KEY":
+        base_url = os.getenv("OPENAI_BASE_URL")
+        if base_url:
+            # Local API - API key is optional
+            print(f"Using local API at {base_url}")
+            return True
     
     # Check if API key already exists
     if check_api_key_exists(api_key_name):
