@@ -14,6 +14,7 @@ Dexter toma preguntas financieras complejas y las convierte en planes de investi
 - **Auto-Validación**: Verifica su propio trabajo e itera hasta que las tareas estén completas
 - **Datos Financieros en Tiempo Real**: Acceso a estados de resultados, balances y estados de flujo de efectivo
 - **Características de Seguridad**: Detección de bucles incorporada y límites de pasos para prevenir ejecución descontrolada
+- **Soporte para APIs Locales**: Compatible con LM Studio, Ollama y otros servidores locales compatibles con OpenAI
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/virattt?style=social)](https://twitter.com/virattt)
 
