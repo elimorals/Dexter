@@ -136,15 +136,105 @@ export function getChatModel(modelName: string, temperature: number = 0, streami
 }
 ```
 
-### Nota sobre Endpoints Personalizados
+### Soporte para APIs Locales (LM Studio, Ollama, etc.)
 
-**Dexter NO utiliza el endpoint de LM Studio** (`http://localhost:1234/v1/chat/completions`). El sistema está diseñado para usar los endpoints oficiales de los proveedores a través de LangChain. Si deseas usar un modelo local como LM Studio, necesitarías:
+**Dexter SÍ soporta endpoints locales** como LM Studio, Ollama y otros servidores compatibles con la API de OpenAI. El sistema detecta automáticamente cuando se configura una URL base local y ajusta su comportamiento en consecuencia.
 
-1. Configurar LangChain para usar un endpoint personalizado
-2. Modificar `get_chat_model()` para aceptar un `base_url` personalizado
-3. Configurar las variables de entorno apropiadas
+#### Configuración para APIs Locales
 
-Actualmente, el sistema utiliza las APIs oficiales de OpenAI, Anthropic y Google.
+Para usar una API local (como LM Studio en `http://localhost:1234`), configura la variable de entorno `OPENAI_BASE_URL`:
+
+```bash
+# En tu archivo .env
+OPENAI_BASE_URL=http://localhost:1234/v1
+OPENAI_API_KEY=local-key-123  # Opcional para APIs locales sin autenticación
+```
+
+**Notas importantes:**
+- La URL base **debe incluir `/v1` al final** (ejemplo: `http://localhost:1234/v1`)
+- LangChain añadirá automáticamente `/chat/completions` al hacer las peticiones
+- Si tu API local no requiere autenticación, puedes usar cualquier valor para `OPENAI_API_KEY` o incluso omitirlo
+- El nombre del modelo debe coincidir exactamente con el que está cargado en tu servidor local
+
+#### Ejemplo de Uso con LM Studio
+
+1. Inicia LM Studio y carga un modelo (ej: `qwen3-vl-30b-a3b-thinking`)
+2. Asegúrate de que el servidor local esté corriendo en `http://localhost:1234`
+3. Configura tu archivo `.env`:
+   ```bash
+   OPENAI_BASE_URL=http://localhost:1234/v1
+   OPENAI_API_KEY=lm-studio  # Cualquier valor funciona
+   ```
+4. Ejecuta Dexter normalmente:
+   ```bash
+   uv run dexter-agent  # Python
+   # o
+   bun run start        # TypeScript
+   ```
+
+#### Formato de la API Local
+
+La API local debe ser compatible con el formato de OpenAI. El endpoint esperado es:
+
+```
+POST http://localhost:1234/v1/chat/completions
+```
+
+Con el siguiente formato de request (compatible con LM Studio):
+
+```json
+{
+    "model": "lmstudio-community/qwen3-vl-30b-a3b-thinking",
+    "messages": [
+        {
+            "role": "system",
+            "content": "Always answer in rhymes. Today is Thursday"
+        },
+        {
+            "role": "user",
+            "content": "What day is it today?"
+        }
+    ],
+    "temperature": 0.7,
+    "max_tokens": -1,
+    "stream": false
+}
+```
+
+#### Modelos Compatibles con APIs Locales
+
+LM Studio y otros servidores locales funcionan mejor con modelos que soportan function calling:
+- Llama 3.1 (8B, 70B)
+- Qwen2.5 / Qwen3
+- Mistral
+- Otros modelos que soporten OpenAI-compatible function calling
+
+**Nota**: Algunos modelos pueden no soportar structured output perfectamente. En ese caso, el código hará fallback automático a respuestas regulares.
+
+#### Implementación Técnica
+
+**Python** (`src/dexter/model.py`):
+```python
+base_url = os.getenv("OPENAI_BASE_URL")
+if base_url:
+    # Usa API local con LocalChatOpenAI
+    return LocalChatOpenAI(
+        model=model_name,
+        base_url=base_url,
+        api_key=api_key  # Opcional para APIs locales
+    )
+```
+
+**TypeScript** (`dexter-ts/src/model/llm.ts`):
+```typescript
+const baseUrl = process.env.OPENAI_BASE_URL;
+if (baseUrl) {
+  config.configuration = { baseURL: baseUrl };
+  // API key opcional para APIs locales
+}
+```
+
+Para más detalles sobre configuración de APIs locales, consulta el archivo [`API_LOCAL.md`](API_LOCAL.md).
 
 ## Sistema de Herramientas Financieras
 
@@ -376,6 +466,7 @@ cp env.example .env
 
 # Edita .env y añade tus API keys
 # OPENAI_API_KEY=tu-clave-openai
+# OPENAI_BASE_URL=http://localhost:1234/v1  # Opcional: para usar APIs locales (LM Studio, Ollama, etc.)
 # ANTHROPIC_API_KEY=tu-clave-anthropic (opcional)
 # GOOGLE_API_KEY=tu-clave-google (opcional)
 # FINANCIAL_DATASETS_API_KEY=tu-clave-financial-datasets
@@ -401,6 +492,7 @@ cp ../env.example .env
 
 # Edita .env y añade tus API keys
 # OPENAI_API_KEY=tu-clave-openai
+# OPENAI_BASE_URL=http://localhost:1234/v1  # Opcional: para usar APIs locales (LM Studio, Ollama, etc.)
 # ANTHROPIC_API_KEY=tu-clave-anthropic (opcional)
 # GOOGLE_API_KEY=tu-clave-google (opcional)
 # FINANCIAL_DATASETS_API_KEY=tu-clave-financial-datasets
@@ -480,12 +572,18 @@ const agent = new Agent({
 ### Variables de Entorno Opcionales
 
 ```bash
+# API Local (LM Studio, Ollama, etc.)
+OPENAI_BASE_URL=http://localhost:1234/v1  # URL base de tu API local
+OPENAI_API_KEY=local-key-123              # Opcional para APIs sin autenticación
+
 # LangSmith (para tracing y debugging)
 LANGSMITH_API_KEY=tu-clave-langsmith
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 LANGSMITH_PROJECT=dexter
 LANGSMITH_TRACING=true
 ```
+
+**Nota**: Para más información sobre cómo configurar APIs locales como LM Studio, consulta el archivo [`API_LOCAL.md`](API_LOCAL.md) que incluye instrucciones detalladas, troubleshooting y ejemplos específicos.
 
 ## Características de Seguridad
 
